@@ -4,7 +4,7 @@
 # Script will attempt to auto detect primary public IP address
 # This script is capable of installing with or without swap depending on your VPS
 # Usage:
-# bash bare-setup.sh 
+# bash bitg-setup.sh 
 #
 
 #Color codes
@@ -20,40 +20,40 @@ RPC=27004
 
 #GLOBAL VARIABLES - Check the daemon deployment section for proper deployment
 #this is the Github Source for the binaries
-SOURCE='https://github.com/BareCrypto/bare-core/releases/download/v1.1.0.3/BARE_v1.1.0.3_ubuntu16_deamon.tar.gz'
+SOURCE='https://github.com/twystidceed/BITG-MN-setup/releases/download/v1.4.0.3/bitgreen.16.04.tar.gz'
 
 #The archive itself from the source
-ARCHIVE=BARE_v1.1.0.3_ubuntu16_deamon.tar.gz
+ARCHIVE=bitgreen.16.04.tar.gz
 
 #name of the folder created with the git clone when clonign the repository
-FOLDER=BARE-MN-setup
+FOLDER=BITG-MN-setup
 
 #official name
-NAME='Bare'
+NAME='BitGreen'
 
 #name2 is the actual name of the binary when installed on VPS [CASE SENSISTIVE]
-NAME2=bare
+NAME2=bitgreen
 
 #Simply the Ticker of the coin for referenceing in the script - no usage case not sensitive
-TICKER=BARE
+TICKER=BITG
 
 #actual name of the hidden folder for the coin [CASE SENSITIVE]
-HIDDEN=.bare
+HIDDEN=.bitgreen
 
 #Actual name of the conf file in the hidden folder [CASE SENSITIVE]
-CONF=bare.conf
+CONF=bitgreen.conf
 
 #actual name od the coin daemon [CASE SENSITIVE]
-DAEMON=bared
+DAEMON=bitgreend
 
 #Actual name of the coin daemon -cli [CASE SENSITIVE]
-CLI=bare-cli
+CLI=bitgreen-cli
 
 #name of the monitor script [CASE SENSITIVE]
-MONITOR=baremon.sh
+MONITOR=bitgmon.sh
 
 #only enable if needed due to binaries being extracted to a second folder within the cloned folder
-#FOLDER2=qyno-2.0.0/
+#FOLDER2=/
 
 #Clear keyboard input buffer
 function clear_stdin { while read -r -t 0; do read -r; done; }
@@ -117,15 +117,16 @@ echo -e
 sleep 3
 
 
-genkey=$3
+genkey=$1
 #Enter the new BLS genkey
 clear
 echo -e "${YELLOW}AXE Coin DIP003 Masternode Setup Script V2 for Ubuntu 16.04 LTS${NC}"
-	read -e -p "Enter your BLS key:" genkey3;
-              read -e -p "Confirm your BLS key: " genkey4;
+	read -e -p "Enter your BLS key:" genkey;
+              read -e -p "Confirm your BLS key: " genkey2;
+
 
 #Confirming match
-  if [ $genkey3 = $genkey4 ]; then
+  if [ $genkey = $genkey2 ]; then
      echo -e "${GREEN}MATCH! ${NC} \a" 
 else 
      echo -e "${RED} Error: BLS key do not match. Try again...${NC} \a";exit 1
@@ -159,21 +160,18 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get update -y
 sudo apt-get -y upgrade
 sudo apt-get -y dist-upgrade
 sudo apt-get -y autoremove
-sudo apt-get -y install wget nano htop jq
+sudo apt-get -y install wget nano htop jq dtrx
 sudo apt-get -y install libzmq3-dev
 sudo apt-get -y install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
 sudo apt-get -y install libevent-dev
-sudo apt-get instal unzip
 sudo apt -y install software-properties-common
 sudo add-apt-repository ppa:bitcoin/bitcoin -y
 sudo apt-get -y update
-sudo apt-get -y install libdb4.8-dev libdb4.8++-dev
 sudo apt-get install unzip
-sudo apt-get -y install libminiupnpc-dev
 sudo apt-get -y install fail2ban
 sudo service fail2ban restart
 sudo apt-get install -y libdb5.3++-dev libdb++-dev libdb5.3-dev libdb-dev && ldconfig
-sudo apt-get install -y unzip libzmq3-dev build-essential libssl-dev libboost-all-dev libqrencode-dev libminiupnpc-dev libboost-system1.58.0 libboost1.58-all-dev libdb4.8++ libdb4.8 libdb4.8-dev libdb4.8++-dev libevent-pthreads-2.0-5
+sudo apt-get install -y libzmq3-dev build-essential libssl-dev libboost-all-dev libqrencode-dev libminiupnpc-dev libboost-system1.58.0 libboost1.58-all-dev libdb4.8++ libdb4.8 libdb4.8-dev libdb4.8++-dev libevent-pthreads-2.0-5
    fi
 
 #Network Settings
@@ -217,80 +215,109 @@ echo -ne '[###################] (100%)\n'
 rpcuser=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 rpcpassword=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
-#Create 2GB swap file
-#if grep -q "SwapTotal" /proc/meminfo; then
-if grep -q "swapfile" /etc/fstab; then
-    echo -e "${GREEN}Skipping disk swap configuration...${NC} \n"
-else
-    echo -e "${YELLOW}Creating 2GB disk swap file. \nThis may take a few minutes!${NC} \a"
-    touch /var/swap.img
-    chmod 600 /var/swap.img
-    dd if=/dev/zero of=/var/swap.img bs=1024k count=2000
-    mkswap /var/swap.img 2> /dev/null
-    swapon /var/swap.img 2> /dev/null
-    if [ $? -eq 0 ]; then
-        echo '/var/swap.img none swap sw 0 0' >> /etc/fstab
-        echo -e "${GREEN}Swap was created successfully!${NC} \n"
-    else
-        echo -e "${RED}Operation not permitted! Optional swap was not created.${NC} \a"
-        rm /var/swap.img
-    fi
-fi
+echo -e "${YELLOW}=====================================================${NC}"
+echo -e "${YELLOW}=====================================================${NC}"
+echo -e 
+echo -e "${PURPLE}===========Optional SWAP Installation================${NC}"
+echo -e
+echo -e "${RED}Some providers do not allow you to install swap!${NC}"
+echo -e 
+echo -e "${GREEN}If you have VPS with locked swap select N to continue${NC}"
+echo -e "${GREEN}If you need to install SWAP or are unsure select Y${NC}"
+echo -e
+echo -e "${YELLOW}=====================================================${NC}"
+echo -e "${YELLOW}=====================================================${NC}"
+echo -e
 
-#Installing Daemon
- cd ~
-wget https://github.com/AXErunners/axe/releases/download/v1.4.1/axecore-1.4.1-x86_64-linux-gnu.tar.gz
-tar -xzf axecore-1.4.1-x86_64-linux-gnu.tar.gz -C ~/AXE-MN-setup
-rm -rf axecore-1.4.1-x86_64-linux-gnu.tar.gz
 
-stop_daemon
+echo -e "${GREEN}Do you wish to install SWAP Y or N ?${NC} \n"
+ read SWAP
+ 
+	if [[ $SWAP =~ "y" ]] ; then
+			echo "installing SWAP"
+			if grep -q "swapfile" /etc/fstab; then
+				echo -e "${GREEN}Skipping disk swap configuration...${NC} \n"
+			else
+				echo -e "${YELLOW}Creating 2GB disk swap file. \nThis may take a few minutes!${NC} \a"
+				touch /var/swap.img
+				chmod 600 /var/swap.img
+				dd if=/dev/zero of=/var/swap.img bs=1024k count=2000
+				mkswap /var/swap.img 2> /dev/null
+				swapon /var/swap.img 2> /dev/null
+				if [ $? -eq 0 ]; then
+					echo '/var/swap.img none swap sw 0 0' >> /etc/fstab
+					echo -e "${GREEN}Swap was created successfully!${NC} \n"
+				else
+					echo -e "${RED}Operation not permitted! Optional swap was not created.${NC} \a"
+					rm /var/swap.img
+				fi
+			fi
+	fi
+	clear
+
+#Extracting Daemon
+cd ~/$FOLDER
+sudo wget $SOURCE
+sudo dtrx -n -f $ARCHIVE
+rm -rf $ARCHIVE
+
+ 
+ stop_daemon
  
  # Deploy binaries to /usr/bin
- sudo rm ~/AXE-MN-setup/axecore-1.4.1/bin/axe-qt
- sudo rm ~/AXE-MN-setup/axecore-1.4.1/bin/test*
- sudo cp ~/AXE-MN-setup/axecore-1.4.1/bin/axe* /usr/bin/
- sudo chmod 755 -R ~/AXE-MN-setup
- sudo chmod 755 /usr/bin/axe*
+ cd ~/$FOLDER/$FOLDER2/
+ sudo cp $NAME2* /usr/bin/
+ sudo chmod 755 -R ~/$FOLDER
+ sudo chmod 755 /usr/bin/$NAME2*
  
  # Deploy masternode monitoring script
- cp ~/AXE-MN-setup/axemon.sh /usr/local/bin
- sudo chmod 711 /usr/local/bin/axemon.sh
+ cp ~/$FOLDER/$MONITOR /usr/local/bin/
+ sudo chmod 711 /usr/local/bin/$MONITOR
  
- #Create axe datadir
- if [ ! -f ~/.axecore/axe.conf ]; then 
- 	sudo mkdir ~/.axecore
+ #Create datadir
+ if [ ! -f ~/$HIDDEN/$CONF ]; then 
+ 	sudo mkdir ~/$HIDDEN
  fi
 
-echo -e "${YELLOW}Creating axe.conf...${NC}"
+echo -e "${YELLOW}Creating $CONF...${NC}"
 
 
-cat <<EOF > ~/.axecore/axe.conf
+cat <<EOF > ~/$HIDDEN/$CONF
 rpcuser=$rpcuser
 rpcpassword=$rpcpassword
 EOF
 
-    sudo chmod 755 -R ~/.axecore/axe.conf
+sudo chmod 755 -R ~/$HIDDEN/$CONF
 
-    #Starting daemon first time
-    axed -daemon
-echo -ne '[##                 ] (15%)\r'
-sleep 6
-echo -ne '[######             ] (30%)\r'
-sleep 9
-echo -ne '[########           ] (45%)\r'
-sleep 6
-echo -ne '[############       ] (67%)\r'
-sleep 9
-echo -ne '[################   ] (72%)\r'
+    #Starting daemon first time just to generate masternode private key
+    $DAEMON -daemon
+echo -ne '[#         ] (10%)\r'
 sleep 10
-echo -ne '[###################] (100%)\r'
+echo -ne '[##        ] (20%)\r'
+sleep 10
+echo -ne '[###       ] (30%)\r'
+sleep 10 
+echo -ne '[####      ] (40%)\r'
+sleep 10
+echo -ne '[#####     ] (50%)\r'
+sleep 10
+echo -ne '[######    ] (60%)\r'
+sleep 10
+echo -ne '[#######   ] (70%)\r'
+sleep 10
+echo -ne '[########  ] (80%)\r'
+sleep 10
+echo -ne '[######### ] (90%)\r'
+sleep 10
+echo -ne '[##########] (100%)\r'
 echo -ne '\n'
+
     
-    #Stopping daemon to create axe.conf
+    #Stopping daemon to create $CONF
     stop_daemon
 
-# Create axe.conf
-cat <<EOF > ~/.axecore/axe.conf
+# Create $CONF
+cat <<EOF > ~/$HIDDEN/$CONF
 rpcuser=$rpcuser
 rpcpassword=$rpcpassword
 rpcport=$RPC
@@ -302,11 +329,11 @@ logintimestamps=1
 maxconnections=10
 externalip=$publicip:$PORT
 masternode=1
-masternodeblsprivkey=$genkey3
+masternodeblsprivkey=$genkey
 EOF
 
 #Finally, starting axe daemon with new axe.conf
-axed -daemon
+$DAEMON -daemon
 echo -ne '[##                 ] (15%)\r'
 sleep 10
 echo -ne '[######             ] (30%)\r'
@@ -316,32 +343,10 @@ sleep 5
 echo -ne '[##############     ] (72%)\r'
 sleep 10
 echo -ne '[###################] (100%)\r'
-axe-cli addnode 198.13.50.26:9937 onetry
 echo -ne '\n'
 
-#Install Sentinel 
-echo -e "${YELLOW}Installing sentinel...${NC}"
-sudo apt-get update
-sudo apt-get upgrade -y
-sudo apt-get -y install python-pip
-sudo apt-get -y install virtualenv
-      cd ~/.axecore
-	  git clone https://github.com/AXErunners/sentinel.git
-
-    cd ~/.axecore/sentinel
-      virtualenv venv
-      ./venv/bin/pip install -r requirements.txt
-      ./venv/bin/python bin/sentinel.py
-    chmod -R 755 database
-    cd
-    crontab -l > sentinelcron
-    echo "* * * * * cd /root/.axecore/sentinel && ./venv/bin/python bin/sentinel.py 2>&1 >> sentinel-cron.log" >> sentinelcron
-
-crontab sentinelcron
-rm sentinelcron
-
-#Setting auto start cron job for axed
-cronjob="@reboot sleep 30 && axed -daemon"
+#Setting auto start cron job daemon
+cronjob="@reboot sleep 30 && $DAEMON -daemon"
 crontab -l > tempcron
 if ! grep -q "$cronjob" tempcron; then
     echo -e "${GREEN}Configuring crontab job...${NC}"
@@ -354,23 +359,49 @@ echo -e "=======================================================================
 ${YELLOW}Masternode setup is complete!${NC}
 ========================================================================
 Masternode was installed with VPS IP Address: ${YELLOW}$publicip${NC}
-Masternode BLS Key: ${YELLOW}$genkey3${NC}
+Masternode Private Key: ${YELLOW}$genkey${NC}
+Now you can add the following string to the masternode.conf file
+for your Hot Wallet (the wallet with your $TICKER collateral funds):
 ======================================================================== \a"
+echo -e "${YELLOW}mn1 $publicip:$PORT $genkey TxId TxIdx${NC}"
+echo -e "========================================================================
+Use your mouse to copy the whole string above into the clipboard by
+tripple-click + single-click (Dont use Ctrl-C) and then paste it 
+into your ${YELLOW}masternode.conf${NC} file and replace:
+    ${YELLOW}mn1${NC} - with your desired masternode name (alias)
+    ${YELLOW}TxId${NC} - with Transaction Id from masternode outputs
+    ${YELLOW}TxIdx${NC} - with Transaction Index (0 or 1)
+     Remember to save the masternode.conf and restart the wallet!
+To introduce your new masternode to the $TICKER network, you need to
+issue a masternode start command from your wallet, which proves that
+the collateral for this node is secured."
 
 clear_stdin
 read -p "*** Press any key to continue ***" -n1 -s
 
 echo -e "1) Wait for the node wallet on this VPS to sync with the other nodes
-on the network. Eventually the status 'WAITING_FOR_PROTX' status will change
-to display the ProTx details such as the 'ownerAddress' and other information 
-from the initial setup of the transactions, which will indicate a comlete sync, 
-although it may take several minutes to several hours depending on the network state.
+on the network. Eventually the 'Is Synced' status will change
+to 'true', which will indicate a complete sync, although it may take
+from several minutes to several hours depending on the network state.
 Your initial Masternode Status may read:
-    ${YELLOW}Waiting for ProTx to appear on-chain${NC}, which is normal and expected.
-2) Wait at least until 'IsBlockchainSynced' status becomes 'true'. The state of the masternode
-status should update to read 'READY'. This indicates complete sync and proper setup.
-At this point you should not have to do any additional steps.
-Currently your masternode is syncing with the AXE network...
+    ${YELLOW}Node just started, not yet activated${NC} or
+    ${YELLOW}Node  is not in masternode list${NC}, which is normal and expected.
+2) Wait at least until 'IsBlockchainSynced' status becomes 'true' or status 999.
+
+At this point you can go to your wallet and issue a start
+command by either using Debug Console:
+    Tools->Debug Console-> enter: ${YELLOW}masternode start-alias mn1${NC}
+    where ${YELLOW}mn1${NC} is the name of your masternode (alias)
+    as it was entered in the masternode.conf file
+    
+or by using wallet GUI:
+    Masternodes -> Select masternode -> RightClick -> ${YELLOW}start alias${NC}
+Once completed step (2), return to this VPS console and wait for the
+Masternode Status to change to: 'Masternode successfully started'.
+This will indicate that your masternode is fully functional and
+you can celebrate this achievement!
+
+Currently your masternode is syncing with the $TICKER network...
 The following screen will display in real-time
 the list of peer connections, the status of your masternode,
 node synchronization status and additional network and node stats.
@@ -379,39 +410,43 @@ clear_stdin
 read -p "*** Press any key to continue ***" -n1 -s
 
 echo -e "
+${GREEN}...scroll up to see previous screens...${NC}
+Here are some useful commands and tools for masternode troubleshooting:
 ========================================================================
-To view masternode configuration produced by this script in axe.conf:
-${YELLOW}cat ~/.axecore/axe.conf${NC}
-Here is your axe.conf generated by this script:
+To view masternode configuration produced by this script in $CONF:
+${YELLOW}cat ~/$HIDDEN/$CONF${NC}
+Here is your $CONF generated by this script:
 -------------------------------------------------${YELLOW}"
-cat ~/.axecore/axe.conf
+cat ~/$HIDDEN/$CONF
 echo -e "${NC}-------------------------------------------------
-NOTE: To edit axe.conf, first stop the axed daemon,
-then edit the axe.conf file and save it in nano: (Ctrl-X + Y + Enter),
-then start the axed daemon back up:
-             to stop:   ${YELLOW}axe-cli stop${NC}
-             to edit:   ${YELLOW}axe ~/.axecore/axe.conf${NC}
-             to start:  ${YELLOW}axed${NC}
+NOTE: To edit $CONF, first stop the $DAEMON daemon,
+then edit the $CONF file and save it in nano: (Ctrl-X + Y + Enter),
+then start the $DAEMON daemon back up:
+             to stop:   ${YELLOW}$CLI stop${NC}
+             to edit:   ${YELLOW}nano ~/$HIDDEN/$CONF${NC}
+             to start:  ${YELLOW}$DAEMON -daemon{NC}
 ========================================================================
-To view AXE debug log showing all MN network activity in realtime:
-             ${YELLOW}tail -f ~/.axecore/debug.log${NC}
+To view LSR debug log showing all MN network activity in realtime:
+             ${YELLOW}tail -f ~/$HIDDEN/debug.log${NC}
 ========================================================================
 To monitor system resource utilization and running processes:
                    ${YELLOW}htop${NC}
 ========================================================================
 To view the list of peer connections, status of your masternode, 
-sync status etc. in real-time, run the axemon.sh script:
-                 ${YELLOW}axemon.sh${NC}
+sync status etc. in real-time, run the $MONITOR script:
+                 ${YELLOW}$MONITOR${NC}
 or just type 'node' and hit <TAB> to autocomplete script name.
 ========================================================================
-Enjoy your AXE Masternode and thanks for using this setup script!
+Enjoy your $TICKER Masternode and thanks for using this setup script!
 
 If you found this script useful, please donate to : 
 ${GREEN}no donations at this time ${NC}
 ...and make sure to check back for updates!
+
+Contact Twystidceed#4126 on discord if you need additional support
 "
-delay 30
-# Run axemon.sh
-axemon.sh
+delay 10
+# Run $MONITOR
+sudo $MONITOR
 
 # EOF
