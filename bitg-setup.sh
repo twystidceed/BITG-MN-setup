@@ -286,6 +286,7 @@ cat <<EOF > ~/$HIDDEN/$CONF
 rpcuser=$rpcuser
 rpcpassword=$rpcpassword
 EOF
+sleep 3
 
 sudo chmod 755 -R ~/$HIDDEN/$CONF
 
@@ -315,6 +316,7 @@ echo -ne '\n'
     
     #Stopping daemon to create $CONF
     stop_daemon
+	echo -e "${GREEN}Stopping daemon to install new conf settings...${NC}"
 
 # Create $CONF
 cat <<EOF > ~/$HIDDEN/$CONF
